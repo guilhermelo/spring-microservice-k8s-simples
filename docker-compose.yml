@@ -4,45 +4,61 @@ services:
   postgres:
     image: postgres:latest
     ports:
-      - 5000:5432
+      - 5432:5432
+    restart: always
     environment:
       POSTGRES_DB: dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    networks:
+      - rede
       
   product:
-    image: product
+    build:
+      context: ./product-api
     restart: always
     ports: 
         - 8081:8081
     environment:
-      POSTGRES_URL: jdbc:postgresql://postgres:5000/dev
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     depends_on:
       - postgres
-  # user:
-    # image: user
-    # ports: 
-        # - 8080:8080
-    # environment:
-      # POSTGRES_URL: jdbc:postgresql://postgres:5000/dev
-      # POSTGRES_USER: postgres
-      # POSTGRES_PASSWORD: postgres
-    # networks:
-      # - rede
-    # depends_on:
-      # - postgres 
+    networks:
+      - rede
+
+  user:
+    build:
+      context: ./user-api
+    ports: 
+        - 8080:8080
+    restart: always
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - rede
+    depends_on:
+      - postgres 
   
-  # shopping:
-    # image: shopping
-    # ports: 
-        # - 8082:8082
-    # environment:
-      # POSTGRES_URL: jdbc:postgresql://postgres:5000/dev
-      # POSTGRES_USER: postgres
-      # POSTGRES_PASSWORD: postgres
-      # PRODUCT_API_URL: product:8081
-      # USER_API_URL: user:8080
-    # depends_on:
-      # - postgres 
+  shopping:
+    build:
+      context: ./shopping-api
+    ports: 
+        - 8082:8082
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PRODUCT_API_URL: product:8081
+      USER_API_URL: user:8080
+    networks:
+      - rede
+    depends_on:
+      - postgres 
+
+networks:
+  rede: 
+    driver: bridge
